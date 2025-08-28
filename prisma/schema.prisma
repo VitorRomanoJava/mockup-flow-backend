@@ -1,0 +1,40 @@
+// prisma/schema.prisma
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  name      String?
+  password  String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Adicione esta linha para completar a relação
+  projects  Project[]
+
+  @@map("users")
+}
+
+// ... (o gerador, datasource e model User que já existem)
+
+model Project {
+  id          String   @id @default(uuid())
+  name        String
+  canvasState Json? // Onde vamos salvar o estado do desenho no futuro
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relacionamento: um projeto pertence a um usuário
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("projects")
+}

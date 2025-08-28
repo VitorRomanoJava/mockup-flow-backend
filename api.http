@@ -1,0 +1,72 @@
+### =======================================
+### ETAPA 1: AUTENTICAÇÃO
+### =======================================
+
+### 1. Registrar um novo usuário (só precisa rodar uma vez)
+# @name registerUser
+POST http://localhost:3000/auth/register
+Content-Type: application/json
+
+{
+  "email": "teste@mockupflow.com",
+  "name": "Usuário Teste",
+  "password": "password123"
+}
+
+###
+
+### 2. Fazer login para obter o token de acesso
+# @name login
+POST http://localhost:3000/auth/login
+Content-Type: application/json
+
+{
+  "email": "teste@mockupflow.com",
+  "password": "password123"
+}
+
+@token = {{login.response.body.access_token}}
+
+###
+
+### =======================================
+### ETAPA 2: PROJETOS
+### =======================================
+
+### 3. Criar um novo projeto
+# @name createProject
+POST http://localhost:3000/projects
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "name": "Meu Primeiro Mockup"
+}
+
+@projectId = {{createProject.response.body.id}}
+
+###
+
+### =======================================
+### ETAPA 3: TESTE DO CANVAS
+### =======================================
+
+### 4. Salvar o estado do canvas no projeto criado
+# @name updateCanvas
+PUT http://localhost:3000/projects/{{projectId}}/canvas
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "canvasState": {
+    "version": "5.3.0",
+    "objects": []
+  }
+}
+
+###
+
+### 5. Verificar se o projeto foi salvo corretamente
+# @name getProjectById
+GET http://localhost:3000/projects/{{projectId}}
+Authorization: Bearer {{token}}
