@@ -1,8 +1,33 @@
 version: '3.8'
 
 services:
+  # Serviço da Aplicação NestJS
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: mockup-flow-api
+    ports:
+      - "3000:3000" # Mapeia a porta 3000 do container para a 3000 do host
+    # Carrega as variáveis de ambiente de um arquivo .env
+    # Certifique-se de criar um arquivo .env a partir do .env.example
+    env_file:
+      - .env
+    # Garante que o serviço 'db' esteja pronto antes de iniciar a 'app'
+    depends_on:
+      db:
+        condition: service_started
+    # Monta o volume para hot-reloading em desenvolvimento (opcional, mas útil)
+    # ATENÇÃO: Se o erro 500 persistir, pode ser necessário comentar a linha de 'volumes'
+    # para garantir que o 'node_modules' do container seja sempre usado.
+    volumes:
+      - .:/usr/src/app
+      - /usr/src/app/node_modules # Impede que o node_modules local sobrescreva o do container
+
+  # Serviço do Banco de Dados PostgreSQL
   db:
     image: postgres:15
+    container_name: mockup-flow-db
     restart: always
     environment:
       POSTGRES_USER: docker

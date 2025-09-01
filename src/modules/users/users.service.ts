@@ -1,24 +1,41 @@
-// src/modules/users/users.service.ts
-import { Injectable } from '@nestjs/common';
+// Garanta que estas importações estão no topo do arquivo src/modules/users/users.service.ts
+
+import { Injectable, ConflictException } from '@nestjs/common';
 import { PrismaService } from '../../infra/database/prisma.service';
-import { User } from '@prisma/client';
 import * as bcrypt from 'bcrypt';
+import { User } from '@prisma/client';
+// A importação abaixo é crucial para a verificação de tipo!
+import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
 
 @Injectable()
 export class UsersService {
   constructor(private prisma: PrismaService) {}
 
-  async findByEmail(email: string): Promise<User | null> {
-    return this.prisma.user.findUnique({ where: { email } });
-  }
+  // ... outros métodos do serviço ...
 
   async create(data: Omit<User, 'id' | 'createdAt' | 'updatedAt'>): Promise<User> {
-    const hashedPassword = await bcrypt.hash(data.password, 10);
-    return this.prisma.user.create({
-      data: {
-        ...data,
-        password: hashedPassword,
-      },
-    });
+    try {
+      const hashedPassword = await bcrypt.hash(data.password, 10);
+      const user = await this.prisma.user.create({
+        data: {
+          ...data,
+          password: hashedPassword,
+        },
+      });
+      return user;
+    } catch (error) {
+      // ESTA É A VERIFICAÇÃO COMPLETA E CORRETA
+      if (
+        error instanceof PrismaClientKnownRequestError &&
+        error.code === 'P2002'
+      ) {
+        // Se for um erro conhecido do Prisma de violação de chave única...
+        throw new ConflictException('Este e-mail já está em uso.');
+      }
+      // Para qualquer outro tipo de erro, simplesmente relance-o
+      throw error;
+    }
   }
+
+  // ... resto do serviço ...
 }
